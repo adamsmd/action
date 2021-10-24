@@ -41,8 +41,7 @@ const architectures: ReadonlyMap<Kind, Architecture> = (() => {
     kind: Kind.x86_64,
     cpu: host.kind === host.Kind.darwin ? 'host' : 'qemu64',
     machineType: 'pc',
-    accelerator:
-      host.kind === host.Kind.darwin ? vm.Accelerator.hvf : vm.Accelerator.tcg,
+    accelerator: host.host.accelerator,
     resourceUrl: `${resourceBaseUrl}v0.2.0-rc14/qemu-system-x86_64-${hostString}.tar`
   })
 
