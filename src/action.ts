@@ -348,7 +348,7 @@ class ResourceDisk {
   }
 
   private async createDiskDevice(): Promise<string> {
-    core.debug('Creating disk file')
+    core.debug('Creating disk device')
     return await this.host.createDiskDevice(this.diskPath)
   }
 
@@ -358,7 +358,7 @@ class ResourceDisk {
   }
 
   private async mountDisk(mountPath: string): Promise<string> {
-    core.debug('mounting disk')
+    core.debug('Mounting disk')
     return await this.host.mountDisk(this.devicePath, mountPath)
   }
 
