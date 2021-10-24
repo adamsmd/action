@@ -198,7 +198,6 @@ export class Action {
   }
 
   private async setupSSHKey(): Promise<void> {
-    const mountPath = this.resourceDisk.create()
     await exec.exec('ssh-keygen', [
       '-t',
       'ed25519',
@@ -208,8 +207,10 @@ export class Action {
       '-N',
       ''
     ])
-    fs.copyFileSync(this.publicSshKey, path.join(await mountPath, 'keys'))
-    this.resourceDisk.unmount()
+
+    this.resourceDisk.create(async mountPath => {
+      fs.copyFileSync(this.publicSshKey, path.join(await mountPath, 'keys'))
+    })
   }
 
   private async syncFiles(
@@ -313,12 +314,8 @@ class QemuImplementation extends Implementation {
 class ResourceDisk {
   readonly diskPath: string
 
-  private readonly mountName = 'RES'
-  private mountPath!: string
-
   private readonly host: hostModule.Host
   private readonly tempPath: string
-  private devicePath!: string
 
   constructor(tempPath: string, host: hostModule.Host) {
     this.host = host
@@ -326,50 +323,10 @@ class ResourceDisk {
     this.diskPath = path.join(this.tempPath, 'res.raw')
   }
 
-  async create(): Promise<string> {
+  async create(block: (mountPath: Promise<string>) => void): Promise<void> {
     core.debug('Creating resource disk')
-    await this.createDiskFile()
-    this.devicePath = await this.createDiskDevice()
-    await this.partitionDisk()
-
     const mountPath = path.join(this.tempPath, 'mount/RES')
-
-    return (this.mountPath = await this.mountDisk(mountPath))
-  }
-
-  async unmount(): Promise<void> {
-    await this.unmountDisk()
-    await this.detachDevice()
-  }
-
-  private async createDiskFile(): Promise<void> {
-    core.debug('Creating disk file')
-    await this.host.createDiskFile('40m', this.diskPath)
-  }
-
-  private async createDiskDevice(): Promise<string> {
-    core.debug('Creating disk device')
-    return await this.host.createDiskDevice(this.diskPath)
-  }
-
-  private async partitionDisk(): Promise<void> {
-    core.debug('Partitioning disk')
-    await this.host.partitionDisk(this.devicePath, this.mountName)
-  }
-
-  private async mountDisk(mountPath: string): Promise<string> {
-    core.debug('Mounting disk')
-    return await this.host.mountDisk(this.devicePath, mountPath)
-  }
-
-  private async unmountDisk(): Promise<void> {
-    core.debug('Unmounting disk')
-    await exec.exec('sudo', ['umount', this.mountPath])
-  }
-
-  private async detachDevice(): Promise<void> {
-    core.debug('Detaching device')
-    await this.host.detachDevice(this.devicePath)
+    await this.host.createDisk('40m', this.diskPath, mountPath, block)
   }
 }
 

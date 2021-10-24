@@ -2,6 +2,7 @@ import {promises as fs} from 'fs'
 import * as process from 'process'
 import * as os from 'os'
 
+import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 
 import {execWithOutput} from './utility'
@@ -51,11 +52,19 @@ export abstract class Host {
 
   abstract get accelerator(): vm.Accelerator
   abstract get workDirectory(): string
-  abstract createDiskFile(size: string, diskPath: string): Promise<void>
+
+  abstract createDisk(
+    size: string,
+    diskPath: string,
+    requestedMountPath: string,
+    block: (mountPath: Promise<string>) => void
+  ): Promise<void>
+
+  /*abstract createDiskFile(size: string, diskPath: string): Promise<void>
   abstract createDiskDevice(diskPath: string): Promise<string>
   abstract partitionDisk(devicePath: string, mountName: string): Promise<void>
   abstract mountDisk(devicePath: string, mountPath: string): Promise<string>
-  abstract detachDevice(devicePath: string): Promise<void>
+  abstract detachDevice(devicePath: string): Promise<void>*/
 }
 
 class MacOs extends Host {
@@ -67,11 +76,35 @@ class MacOs extends Host {
     return '/Users/runner/work'
   }
 
-  async createDiskFile(size: string, diskPath: string): Promise<void> {
+  async createDisk(
+    size: string,
+    diskPath: string,
+    requestedMountPath: string,
+    block: (mountPath: Promise<string>) => void
+  ): Promise<void> {
+    await this.createDiskFile(size, diskPath)
+
+    let devicePath: string | undefined
+    let mountPath: Promise<string> | undefined
+
+    try {
+      devicePath = await this.createDiskDevice(diskPath)
+      await this.partitionDisk(devicePath, requestedMountPath)
+      mountPath = this.getFullMountPath(requestedMountPath)
+      block(mountPath)
+    } finally {
+      if (mountPath) this.unmount(await mountPath)
+      if (devicePath) this.detachDevice(devicePath)
+    }
+  }
+
+  private async createDiskFile(size: string, diskPath: string): Promise<void> {
+    core.debug('Creating disk file')
     await exec.exec('mkfile', ['-n', size, diskPath])
   }
 
-  async createDiskDevice(diskPath: string): Promise<string> {
+  private async createDiskDevice(diskPath: string): Promise<string> {
+    core.debug('Creating disk device')
     const devicePath = await execWithOutput(
       'hdiutil',
       [
@@ -87,7 +120,10 @@ class MacOs extends Host {
     return devicePath.trim()
   }
 
-  async partitionDisk(devicePath: string, mountName: string): Promise<void> {
+  private async partitionDisk(
+    devicePath: string,
+    mountName: string
+  ): Promise<void> {
     await exec.exec('diskutil', [
       'partitionDisk',
       devicePath,
@@ -99,11 +135,18 @@ class MacOs extends Host {
     ])
   }
 
-  async mountDisk(_devicePath: string, mountPath: string): Promise<string> {
+  private async getFullMountPath(mountPath: string): Promise<string> {
+    core.debug('Getting full mount path')
     return path.join('/Volumes', path.basename(mountPath))
   }
 
-  async detachDevice(devicePath: string): Promise<void> {
+  private async unmount(mountPath: string): Promise<void> {
+    core.debug('Unmounting disk')
+    await exec.exec('sudo', ['umount', mountPath])
+  }
+
+  private async detachDevice(devicePath: string): Promise<void> {
+    core.debug('Detaching device')
     await exec.exec('hdiutil', ['detach', devicePath])
   }
 }
@@ -117,11 +160,35 @@ class Linux extends Host {
     return '/home/runner/work'
   }
 
-  async createDiskFile(size: string, diskPath: string): Promise<void> {
+  async createDisk(
+    size: string,
+    diskPath: string,
+    requestedMountPath: string,
+    block: (mountPath: Promise<string>) => void
+  ): Promise<void> {
+    await this.createDiskFile(size, diskPath)
+
+    let devicePath: string | undefined
+    let mountPath: Promise<string> | undefined
+
+    try {
+      devicePath = await this.createDiskDevice(diskPath)
+      await this.partitionDisk(devicePath)
+      mountPath = this.mountDisk(devicePath, requestedMountPath)
+      block(mountPath)
+    } finally {
+      if (mountPath) this.unmount(await mountPath)
+      if (devicePath) this.detachDevice(devicePath)
+    }
+  }
+
+  private async createDiskFile(size: string, diskPath: string): Promise<void> {
+    core.debug('Creating disk file')
     await exec.exec('truncate', ['-s', size, diskPath])
   }
 
-  async createDiskDevice(diskPath: string): Promise<string> {
+  private async createDiskDevice(diskPath: string): Promise<string> {
+    core.debug('Creating disk device')
     const devicePath = await execWithOutput(
       'sudo',
       ['losetup', '-f', '--show', diskPath],
@@ -131,13 +198,15 @@ class Linux extends Host {
     return devicePath.trim()
   }
 
-  /* eslint-disable  @typescript-eslint/no-unused-vars */
-  async partitionDisk(devicePath: string, _mountName: string): Promise<void> {
-    /* eslint-enable  @typescript-eslint/no-unused-vars */
+  private async partitionDisk(devicePath: string): Promise<void> {
     await exec.exec('sudo', ['mkfs.msdos', devicePath])
   }
 
-  async mountDisk(devicePath: string, mountPath: string): Promise<string> {
+  private async mountDisk(
+    devicePath: string,
+    mountPath: string
+  ): Promise<string> {
+    core.debug('Mounting disk')
     await fs.mkdir(mountPath, {recursive: true})
     const uid = os.userInfo().uid
     await exec.exec('sudo', [
@@ -151,7 +220,12 @@ class Linux extends Host {
     return mountPath
   }
 
-  async detachDevice(devicePath: string): Promise<void> {
+  private async unmount(mountPath: string): Promise<void> {
+    core.debug('Unmounting disk')
+    await exec.exec('sudo', ['umount', mountPath])
+  }
+
+  private async detachDevice(devicePath: string): Promise<void> {
     await exec.exec('sudo', ['losetup', '-d', devicePath])
   }
 }
