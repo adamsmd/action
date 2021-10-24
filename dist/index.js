@@ -106,7 +106,7 @@ class Action {
                     yield this.runCommand(vm);
                 }
                 finally {
-                    yield this.syncBack(vm.ipAddress);
+                    yield this.syncBackFiles(vm.ipAddress);
                 }
                 yield vm.stop();
             }
@@ -208,7 +208,7 @@ class Action {
             ]);
         });
     }
-    syncBack(ipAddress) {
+    syncBackFiles(ipAddress) {
         return __awaiter(this, void 0, void 0, function* () {
             core.info('Syncing back files');
             // prettier-ignore

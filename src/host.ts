@@ -5,6 +5,7 @@ import * as os from 'os'
 import * as exec from '@actions/exec'
 
 import {execWithOutput} from './utility'
+import * as vm from './vm'
 import path from 'path'
 
 export enum Kind {
@@ -48,6 +49,7 @@ export abstract class Host {
     }
   }
 
+  abstract get accelerator(): vm.Accelerator
   abstract get workDirectory(): string
   abstract createDiskFile(size: string, diskPath: string): Promise<void>
   abstract createDiskDevice(diskPath: string): Promise<string>
@@ -57,6 +59,10 @@ export abstract class Host {
 }
 
 class MacOs extends Host {
+  get accelerator(): vm.Accelerator {
+    return vm.Accelerator.hvf
+  }
+
   get workDirectory(): string {
     return '/Users/runner/work'
   }
@@ -103,6 +109,10 @@ class MacOs extends Host {
 }
 
 class Linux extends Host {
+  get accelerator(): vm.Accelerator {
+    return vm.Accelerator.tcg
+  }
+
   get workDirectory(): string {
     return '/home/runner/work'
   }
@@ -145,3 +155,5 @@ class Linux extends Host {
     await exec.exec('sudo', ['losetup', '-d', devicePath])
   }
 }
+
+export const host = Host.create()

@@ -33,7 +33,7 @@ export class Action {
   private readonly targetDiskName = 'disk.raw'
 
   constructor() {
-    this.host = hostModule.Host.create()
+    this.host = hostModule.host
     this.tempPath = fs.mkdtempSync('/tmp/resources')
     this.resourceDisk = new ResourceDisk(this.tempPath, this.host)
 
