@@ -60,7 +60,7 @@ class Action {
         this.input = new Input();
         this.privateSshKeyName = 'id_ed25519';
         this.targetDiskName = 'disk.raw';
-        this.host = hostModule.host;
+        this.host = hostModule.Host.create();
         this.tempPath = fs.mkdtempSync('/tmp/resources');
         this.resourceDisk = new ResourceDisk(this.tempPath, this.host);
         this.operatingSystem = os.OperatingSystem.create(this.input.operatingSystem, architecture.Kind.x86_64, this.input.version);
@@ -106,7 +106,7 @@ class Action {
                     yield this.runCommand(vm);
                 }
                 finally {
-                    yield this.syncBackFiles(vm.ipAddress);
+                    yield this.syncBack(vm.ipAddress);
                 }
                 yield vm.stop();
             }
@@ -140,13 +140,13 @@ class Action {
                 cpuCount: 2,
                 diskImage: path.join(resourcesDirectory, this.targetDiskName),
                 ssHostPort: this.operatingSystem.ssHostPort,
-                resourcesDiskImage: this.resourceDisk.diskPath,
                 // qemu
                 cpu: this.operatingSystem.architecture.cpu,
                 accelerator: this.operatingSystem.architecture.accelerator,
                 machineType: this.operatingSystem.architecture.machineType,
                 // xhyve
                 uuid: '864ED7F0-7876-4AA7-8511-816FABCFA87F',
+                resourcesDiskImage: this.resourceDisk.diskPath,
                 userboot: path.join(firmwareDirectory, 'userboot.so'),
                 firmware: path.join(firmwareDirectory, 'uefi.fd')
             });
@@ -181,6 +181,7 @@ class Action {
     }
     setupSSHKey() {
         return __awaiter(this, void 0, void 0, function* () {
+            const mountPath = this.resourceDisk.create();
             yield exec.exec('ssh-keygen', [
                 '-t',
                 'ed25519',
@@ -190,9 +191,8 @@ class Action {
                 '-N',
                 ''
             ]);
-            this.resourceDisk.create((mountPath) => __awaiter(this, void 0, void 0, function* () {
-                fs.copyFileSync(this.publicSshKey, path.join(yield mountPath, 'keys'));
-            }));
+            fs.copyFileSync(this.publicSshKey, path.join(yield mountPath, 'keys'));
+            this.resourceDisk.unmount();
         });
     }
     syncFiles(ipAddress, ...excludePaths) {
@@ -205,10 +205,10 @@ class Action {
                 ...(0, array_prototype_flatmap_1.default)(excludePaths, p => ['--exclude', p]),
                 `${this.workDirectory}/`,
                 `runner@${ipAddress}:work`
-            ], { silent: !core.isDebug() });
+            ]);
         });
     }
-    syncBackFiles(ipAddress) {
+    syncBack(ipAddress) {
         return __awaiter(this, void 0, void 0, function* () {
             core.info('Syncing back files');
             // prettier-ignore
@@ -216,7 +216,7 @@ class Action {
                 '-uvzrtopg',
                 `runner@${ipAddress}:work/`,
                 this.workDirectory
-            ], { silent: !core.isDebug() });
+            ]);
         });
     }
     runCommand(vm) {
@@ -237,7 +237,7 @@ class Action {
             case ImplementationKind.xhyve:
                 return new XhyveImplementation(this);
             default:
-                throw Error(`Unhandled implementation kind: ${ImplementationKind[kind]}`);
+                throw Error(`Unhandled implementation kind: $`);
         }
     }
     getHomeDirectory() {
@@ -277,15 +277,61 @@ class QemuImplementation extends Implementation {
 }
 class ResourceDisk {
     constructor(tempPath, host) {
+        this.mountName = 'RES';
         this.host = host;
         this.tempPath = tempPath;
         this.diskPath = path.join(this.tempPath, 'res.raw');
     }
-    create(block) {
+    create() {
         return __awaiter(this, void 0, void 0, function* () {
             core.debug('Creating resource disk');
+            yield this.createDiskFile();
+            this.devicePath = yield this.createDiskDevice();
+            yield this.partitionDisk();
             const mountPath = path.join(this.tempPath, 'mount/RES');
-            yield this.host.createDisk('40m', this.diskPath, mountPath, block);
+            return (this.mountPath = yield this.mountDisk(mountPath));
+        });
+    }
+    unmount() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.unmountDisk();
+            yield this.detachDevice();
+        });
+    }
+    createDiskFile() {
+        return __awaiter(this, void 0, void 0, function* () {
+            core.debug('Creating disk file');
+            yield this.host.createDiskFile('40m', this.diskPath);
+        });
+    }
+    createDiskDevice() {
+        return __awaiter(this, void 0, void 0, function* () {
+            core.debug('Creating disk file');
+            return yield this.host.createDiskDevice(this.diskPath);
+        });
+    }
+    partitionDisk() {
+        return __awaiter(this, void 0, void 0, function* () {
+            core.debug('Partitioning disk');
+            yield this.host.partitionDisk(this.devicePath, this.mountName);
+        });
+    }
+    mountDisk(mountPath) {
+        return __awaiter(this, void 0, void 0, function* () {
+            core.debug('mounting disk');
+            return yield this.host.mountDisk(this.devicePath, mountPath);
+        });
+    }
+    unmountDisk() {
+        return __awaiter(this, void 0, void 0, function* () {
+            core.debug('Unmounting disk');
+            yield exec.exec('sudo', ['umount', this.mountPath]);
+        });
+    }
+    detachDevice() {
+        return __awaiter(this, void 0, void 0, function* () {
+            core.debug('Detaching device');
+            yield this.host.detachDevice(this.devicePath);
         });
     }
 }
@@ -301,8 +347,8 @@ class Input {
         if (this.operatingSystem_ !== undefined)
             return this.operatingSystem_;
         const input = core.getInput('operating_system', { required: true });
-        core.debug(`operating_system input: '${input}'`);
         const kind = os.toKind(input);
+        core.debug(`operating_system input: '${input}'`);
         core.debug(`kind: '${kind}'`);
         if (kind === undefined)
             throw Error(`Invalid operating system: ${input}`);
@@ -425,7 +471,7 @@ const architectures = (() => {
         kind: Kind.x86_64,
         cpu: host.kind === host.Kind.darwin ? 'host' : 'qemu64',
         machineType: 'pc',
-        accelerator: host.host.accelerator,
+        accelerator: host.kind === host.Kind.darwin ? vm.Accelerator.hvf : vm.Accelerator.tcg,
         resourceUrl: `${operating_system_1.resourceBaseUrl}v0.3.0/qemu-system-x86_64-${hostString}.tar`
     });
     return map;
@@ -489,15 +535,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.host = exports.Host = exports.toString = exports.kind = exports.Kind = void 0;
+exports.Host = exports.toString = exports.kind = exports.Kind = void 0;
 const fs_1 = __webpack_require__(5747);
-const path_1 = __importDefault(__webpack_require__(5622));
 const process = __importStar(__webpack_require__(1765));
 const os = __importStar(__webpack_require__(2087));
-const core = __importStar(__webpack_require__(2186));
 const exec = __importStar(__webpack_require__(1514));
 const utility_1 = __webpack_require__(2857);
-const vm = __importStar(__webpack_require__(2772));
+const path_1 = __importDefault(__webpack_require__(5622));
 var Kind;
 (function (Kind) {
     Kind[Kind["darwin"] = 0] = "darwin";
@@ -539,40 +583,16 @@ class Host {
 }
 exports.Host = Host;
 class MacOs extends Host {
-    get accelerator() {
-        return vm.Accelerator.hvf;
-    }
     get workDirectory() {
         return '/Users/runner/work';
     }
-    createDisk(size, diskPath, requestedMountPath, block) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.createDiskFile(size, diskPath);
-            let devicePath;
-            let mountPath;
-            try {
-                devicePath = yield this.createDiskDevice(diskPath);
-                yield this.partitionDisk(devicePath, requestedMountPath);
-                mountPath = this.getFullMountPath(requestedMountPath);
-                block(mountPath);
-            }
-            finally {
-                if (mountPath)
-                    this.unmount(yield mountPath);
-                if (devicePath)
-                    this.detachDevice(devicePath);
-            }
-        });
-    }
     createDiskFile(size, diskPath) {
         return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Creating disk file');
             yield exec.exec('mkfile', ['-n', size, diskPath]);
         });
     }
     createDiskDevice(diskPath) {
         return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Creating disk device');
             const devicePath = yield (0, utility_1.execWithOutput)('hdiutil', [
                 'attach',
                 '-imagekey',
@@ -596,72 +616,41 @@ class MacOs extends Host {
             ]);
         });
     }
-    getFullMountPath(mountPath) {
+    mountDisk(_devicePath, mountPath) {
         return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Getting full mount path');
             return path_1.default.join('/Volumes', path_1.default.basename(mountPath));
-        });
-    }
-    unmount(mountPath) {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Unmounting disk');
-            yield exec.exec('sudo', ['umount', mountPath]);
         });
     }
     detachDevice(devicePath) {
         return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Detaching device');
             yield exec.exec('hdiutil', ['detach', devicePath]);
         });
     }
 }
 class Linux extends Host {
-    get accelerator() {
-        return vm.Accelerator.tcg;
-    }
     get workDirectory() {
         return '/home/runner/work';
     }
-    createDisk(size, diskPath, requestedMountPath, block) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.createDiskFile(size, diskPath);
-            let devicePath;
-            let mountPath;
-            try {
-                devicePath = yield this.createDiskDevice(diskPath);
-                yield this.partitionDisk(devicePath);
-                mountPath = this.mountDisk(devicePath, requestedMountPath);
-                block(mountPath);
-            }
-            finally {
-                if (mountPath)
-                    this.unmount(yield mountPath);
-                if (devicePath)
-                    this.detachDevice(devicePath);
-            }
-        });
-    }
     createDiskFile(size, diskPath) {
         return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Creating disk file');
             yield exec.exec('truncate', ['-s', size, diskPath]);
         });
     }
     createDiskDevice(diskPath) {
         return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Creating disk device');
             const devicePath = yield (0, utility_1.execWithOutput)('sudo', ['losetup', '-f', '--show', diskPath], { silent: true });
             return devicePath.trim();
         });
     }
-    partitionDisk(devicePath) {
+    /* eslint-disable  @typescript-eslint/no-unused-vars */
+    partitionDisk(devicePath, _mountName) {
         return __awaiter(this, void 0, void 0, function* () {
+            /* eslint-enable  @typescript-eslint/no-unused-vars */
             yield exec.exec('sudo', ['mkfs.msdos', devicePath]);
         });
     }
     mountDisk(devicePath, mountPath) {
         return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Mounting disk');
             yield fs_1.promises.mkdir(mountPath, { recursive: true });
             const uid = os.userInfo().uid;
             yield exec.exec('sudo', [
@@ -674,19 +663,12 @@ class Linux extends Host {
             return mountPath;
         });
     }
-    unmount(mountPath) {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Unmounting disk');
-            yield exec.exec('sudo', ['umount', mountPath]);
-        });
-    }
     detachDevice(devicePath) {
         return __awaiter(this, void 0, void 0, function* () {
             yield exec.exec('sudo', ['losetup', '-d', devicePath]);
         });
     }
 }
-exports.host = Host.create();
 //# sourceMappingURL=host.js.map
 
 /***/ }),
@@ -783,12 +765,12 @@ exports.OperatingSystem = exports.toKind = exports.Kind = exports.resourceBaseUr
 const path = __importStar(__webpack_require__(5622));
 const core = __importStar(__webpack_require__(2186));
 const exec = __importStar(__webpack_require__(1514));
-const action = __importStar(__webpack_require__(9139));
 const architecture = __importStar(__webpack_require__(4019));
-const host = __importStar(__webpack_require__(8215));
+const xhyve = __importStar(__webpack_require__(2722));
 const qemu = __importStar(__webpack_require__(1106));
 const vmModule = __importStar(__webpack_require__(2772));
-const xhyve = __importStar(__webpack_require__(2722));
+const action = __importStar(__webpack_require__(9139));
+const host = __importStar(__webpack_require__(8215));
 exports.resourceBaseUrl = 'https://github.com/cross-platform-actions/resources/releases/download/';
 var Kind;
 (function (Kind) {
@@ -809,7 +791,7 @@ function toKind(value) {
 exports.toKind = toKind;
 class OperatingSystem {
     constructor(name, arch, version) {
-        const hostString = host.toString(host.kind);
+        this.baseUrl = 'https://github.com/cross-platform-actions';
         this.resourcesUrl = `${exports.resourceBaseUrl}v0.3.0/resources-${hostString}.tar`;
         this.name = name;
         this.version = version;
@@ -828,7 +810,7 @@ class OperatingSystem {
     }
     get virtualMachineImageUrl() {
         return [
-            OperatingSystem.baseUrl,
+            this.baseUrl,
             `${this.name}-builder`,
             'releases',
             'download',
@@ -853,7 +835,12 @@ class OperatingSystem {
     }
 }
 exports.OperatingSystem = OperatingSystem;
-OperatingSystem.baseUrl = 'https://github.com/cross-platform-actions';
+const hostString = host.toString(host.kind);
+class Qemu extends OperatingSystem {
+    get ssHostPort() {
+        return 2847;
+    }
+}
 class FreeBsd extends OperatingSystem {
     constructor(arch, version) {
         super('freebsd', arch, version);
@@ -887,19 +874,16 @@ class FreeBsd extends OperatingSystem {
     createVirtualMachine(hypervisorDirectory, resourcesDirectory, configuration) {
         core.debug('Creating FreeBSD VM');
         if (this.architecture.kind === architecture.Kind.x86_64) {
-            return new xhyve.FreeBsd(hypervisorDirectory, resourcesDirectory, configuration);
+            return new xhyve.OpenBsd(hypervisorDirectory, resourcesDirectory, configuration);
         }
         else {
-            throw Error(`Not implemented: FreeBSD guests are not implemented on ${architecture.toString(this.architecture.kind)}`);
+            return new qemu.NetBsd(hypervisorDirectory, resourcesDirectory, configuration);
         }
     }
 }
-class NetBsd extends OperatingSystem {
+class NetBsd extends Qemu {
     constructor(arch, version) {
         super('netbsd', arch, version);
-    }
-    get ssHostPort() {
-        return qemu.Vm.sshPort;
     }
     get hypervisorUrl() {
         return this.architecture.resourceUrl;
@@ -956,7 +940,7 @@ class OpenBsd extends OperatingSystem {
             return new xhyve.OpenBsd(hypervisorDirectory, resourcesDirectory, configuration);
         }
         else {
-            throw Error(`Not implemented: OpenBSD guests are not implemented on ${architecture.toString(this.architecture.kind)}`);
+            return new qemu.NetBsd(hypervisorDirectory, resourcesDirectory, configuration);
         }
     }
 }
@@ -1196,8 +1180,8 @@ class Vm {
             for (let index = 0; index < timeout; index++) {
                 core.info('Waiting for VM to be ready...');
                 const result = yield this.execute('true', {
-                    log: core.isDebug(),
-                    silent: !core.isDebug(),
+                    /*log: false,
+                      silent: true,*/
                     ignoreReturnCode: true
                 });
                 if (result === 0) {
@@ -1221,6 +1205,11 @@ class Vm {
             return yield exec.exec('sudo', ['kill', '-s', 'TERM', this.vmProcess.pid.toString()], { ignoreReturnCode: true });
         });
     }
+    shutdown() {
+        return __awaiter(this, void 0, void 0, function* () {
+            throw Error('Not implemented');
+        });
+    }
     execute(command, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const defaultOptions = { log: true };
@@ -1238,6 +1227,11 @@ class Vm {
     execute2(args, intput) {
         return __awaiter(this, void 0, void 0, function* () {
             return yield exec.exec('ssh', ['-t', `${Vm.user}@${this.ipAddress}`].concat(args), { input: intput });
+        });
+    }
+    getIpAddress() {
+        return __awaiter(this, void 0, void 0, function* () {
+            throw Error('Not implemented');
         });
     }
 }
@@ -1320,7 +1314,6 @@ const wait_1 = __webpack_require__(5817);
 const os = __importStar(__webpack_require__(9385));
 class Vm extends vm.Vm {
     constructor(hypervisorDirectory, resourcesDirectory, configuration) {
-        console.log(os.resourceBaseUrl);
         super(hypervisorDirectory, resourcesDirectory, 'xhyve', configuration);
     }
     init() {
@@ -1337,7 +1330,19 @@ class Vm extends vm.Vm {
             return getIpAddressFromArp(this.macAddress);
         });
     }
-    get command() {
+    getMacAddress() {
+        return __awaiter(this, void 0, void 0, function* () {
+            core.debug('Getting MAC address');
+            this.macAddress = (yield (0, utility_1.execWithOutput)('sudo', this.command.concat('-M'), {
+                silent: !core.isDebug()
+            }))
+                .trim()
+                .slice(5);
+            core.debug(`Found MAC address: '${this.macAddress}'`);
+            return this.macAddress;
+        });
+    }
+    /*override*/ get command() {
         const config = this.configuration;
         // prettier-ignore
         return [
@@ -1354,18 +1359,6 @@ class Vm extends vm.Vm {
             '-s', '31,lpc',
             '-l', 'com1,stdio'
         ];
-    }
-    getMacAddress() {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Getting MAC address');
-            this.macAddress = (yield (0, utility_1.execWithOutput)('sudo', this.command.concat('-M'), {
-                silent: !core.isDebug()
-            }))
-                .trim()
-                .slice(5);
-            core.debug(`Found MAC address: '${this.macAddress}'`);
-            return this.macAddress;
-        });
     }
 }
 exports.Vm = Vm;
@@ -1388,13 +1381,13 @@ class FreeBsd extends Vm {
         // prettier-ignore
         return super.command.concat('-f', `fbsd,${this.configuration.userboot},${this.configuration.diskImage},`);
     }
-    get networkDevice() {
-        return 'virtio-net';
-    }
     shutdown() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.execute('sudo shutdown -p now');
         });
+    }
+    get networkDevice() {
+        return 'virtio-net';
     }
 }
 exports.FreeBsd = FreeBsd;
@@ -1403,13 +1396,13 @@ class OpenBsd extends Vm {
         // prettier-ignore
         return super.command.concat('-l', `bootrom,${this.configuration.firmware}`, '-w');
     }
-    get networkDevice() {
-        return 'e1000';
-    }
     shutdown() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.execute('sudo shutdown -h -p now');
         });
+    }
+    get networkDevice() {
+        return 'e1000';
     }
 }
 exports.OpenBsd = OpenBsd;
