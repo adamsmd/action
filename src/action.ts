@@ -383,6 +383,7 @@ class Input {
 
   get version(): string {
     if (this.version_ !== undefined) return this.version_
+
     return (this.version_ = core.getInput('version', {
       required: true
     }))
@@ -390,24 +391,32 @@ class Input {
 
   get operatingSystem(): os.Kind {
     if (this.operatingSystem_ !== undefined) return this.operatingSystem_
+
     const input = core.getInput('operating_system', {required: true})
-    const kind = os.toKind(input)
     core.debug(`operating_system input: '${input}'`)
+
+    const kind = os.toKind(input)
     core.debug(`kind: '${kind}'`)
+
     if (kind === undefined) throw Error(`Invalid operating system: ${input}`)
+
     return (this.operatingSystem_ = kind)
   }
 
   get run(): string {
     if (this.run_ !== undefined) return this.run_
+
     return (this.run_ = core.getInput('run', {required: true}))
   }
 
   get shell(): Shell {
     if (this.shell_ !== undefined) return this.shell_
+
     const input = core.getInput('shell')
     const shell = input ? toShell(input) : Shell.default
+
     if (shell === undefined) throw Error(`Invalid shell: ${input}`)
+
     return (this.shell_ = shell)
   }
 
@@ -423,6 +432,7 @@ class Input {
 
     const input = core.getInput('architecture')
     core.debug(`architecture input: '${input}'`)
+
     if (input === undefined || input === '')
       return (this.architecture_ = architecture.Kind.x86_64)
 
