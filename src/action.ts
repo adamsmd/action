@@ -258,7 +258,9 @@ export class Action {
       case ImplementationKind.xhyve:
         return new XhyveImplementation(this)
       default:
-        throw Error(`Unhandled implementation kind: $`)
+        throw Error(
+          `Unhandled implementation kind: ${ImplementationKind[kind]}`
+        )
     }
   }
 
