@@ -104,7 +104,7 @@ export class Action {
       try {
         await this.runCommand(vm)
       } finally {
-        await this.syncBack(vm.ipAddress)
+        await this.syncBackFiles(vm.ipAddress)
       }
       await vm.stop()
     } finally {
@@ -227,7 +227,7 @@ export class Action {
     ])
   }
 
-  private async syncBack(ipAddress: string): Promise<void> {
+  private async syncBackFiles(ipAddress: string): Promise<void> {
     core.info('Syncing back files')
     // prettier-ignore
     await exec.exec('rsync', [
