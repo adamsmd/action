@@ -153,6 +153,7 @@ export class Action {
         cpuCount: 2,
         diskImage: path.join(resourcesDirectory, this.targetDiskName),
         ssHostPort: this.operatingSystem.ssHostPort,
+        resourcesDiskImage: this.resourceDisk.diskPath,
 
         // qemu
         cpu: this.operatingSystem.architecture.cpu,
@@ -161,7 +162,6 @@ export class Action {
 
         // xhyve
         uuid: '864ED7F0-7876-4AA7-8511-816FABCFA87F',
-        resourcesDiskImage: this.resourceDisk.diskPath,
         userboot: path.join(firmwareDirectory, 'userboot.so'),
         firmware: path.join(firmwareDirectory, 'uefi.fd')
       }
