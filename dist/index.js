@@ -60,7 +60,7 @@ class Action {
         this.input = new Input();
         this.privateSshKeyName = 'id_ed25519';
         this.targetDiskName = 'disk.raw';
-        this.host = hostModule.Host.create();
+        this.host = hostModule.host;
         this.tempPath = fs.mkdtempSync('/tmp/resources');
         this.resourceDisk = new ResourceDisk(this.tempPath, this.host);
         this.operatingSystem = os.OperatingSystem.create(this.input.operatingSystem, architecture.Kind.x86_64, this.input.version);
@@ -140,13 +140,13 @@ class Action {
                 cpuCount: 2,
                 diskImage: path.join(resourcesDirectory, this.targetDiskName),
                 ssHostPort: this.operatingSystem.ssHostPort,
+                resourcesDiskImage: this.resourceDisk.diskPath,
                 // qemu
                 cpu: this.operatingSystem.architecture.cpu,
                 accelerator: this.operatingSystem.architecture.accelerator,
                 machineType: this.operatingSystem.architecture.machineType,
                 // xhyve
                 uuid: '864ED7F0-7876-4AA7-8511-816FABCFA87F',
-                resourcesDiskImage: this.resourceDisk.diskPath,
                 userboot: path.join(firmwareDirectory, 'userboot.so'),
                 firmware: path.join(firmwareDirectory, 'uefi.fd')
             });
@@ -205,7 +205,7 @@ class Action {
                 ...(0, array_prototype_flatmap_1.default)(excludePaths, p => ['--exclude', p]),
                 `${this.workDirectory}/`,
                 `runner@${ipAddress}:work`
-            ]);
+            ], { silent: !core.isDebug() });
         });
     }
     syncBackFiles(ipAddress) {
@@ -216,7 +216,7 @@ class Action {
                 '-uvzrtopg',
                 `runner@${ipAddress}:work/`,
                 this.workDirectory
-            ]);
+            ], { silent: !core.isDebug() });
         });
     }
     runCommand(vm) {
@@ -237,7 +237,7 @@ class Action {
             case ImplementationKind.xhyve:
                 return new XhyveImplementation(this);
             default:
-                throw Error(`Unhandled implementation kind: $`);
+                throw Error(`Unhandled implementation kind: ${ImplementationKind[kind]}`);
         }
     }
     getHomeDirectory() {
@@ -306,7 +306,7 @@ class ResourceDisk {
     }
     createDiskDevice() {
         return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Creating disk file');
+            core.debug('Creating disk device');
             return yield this.host.createDiskDevice(this.diskPath);
         });
     }
@@ -318,7 +318,7 @@ class ResourceDisk {
     }
     mountDisk(mountPath) {
         return __awaiter(this, void 0, void 0, function* () {
-            core.debug('mounting disk');
+            core.debug('Mounting disk');
             return yield this.host.mountDisk(this.devicePath, mountPath);
         });
     }
@@ -347,8 +347,8 @@ class Input {
         if (this.operatingSystem_ !== undefined)
             return this.operatingSystem_;
         const input = core.getInput('operating_system', { required: true });
-        const kind = os.toKind(input);
         core.debug(`operating_system input: '${input}'`);
+        const kind = os.toKind(input);
         core.debug(`kind: '${kind}'`);
         if (kind === undefined)
             throw Error(`Invalid operating system: ${input}`);
@@ -471,7 +471,7 @@ const architectures = (() => {
         kind: Kind.x86_64,
         cpu: host.kind === host.Kind.darwin ? 'host' : 'qemu64',
         machineType: 'pc',
-        accelerator: host.kind === host.Kind.darwin ? vm.Accelerator.hvf : vm.Accelerator.tcg,
+        accelerator: host.host.accelerator,
         resourceUrl: `${operating_system_1.resourceBaseUrl}v0.3.0/qemu-system-x86_64-${hostString}.tar`
     });
     return map;
@@ -535,12 +535,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Host = exports.toString = exports.kind = exports.Kind = void 0;
+exports.host = exports.Host = exports.toString = exports.kind = exports.Kind = void 0;
 const fs_1 = __webpack_require__(5747);
 const process = __importStar(__webpack_require__(1765));
 const os = __importStar(__webpack_require__(2087));
 const exec = __importStar(__webpack_require__(1514));
 const utility_1 = __webpack_require__(2857);
+const vm = __importStar(__webpack_require__(2772));
 const path_1 = __importDefault(__webpack_require__(5622));
 var Kind;
 (function (Kind) {
@@ -583,6 +584,9 @@ class Host {
 }
 exports.Host = Host;
 class MacOs extends Host {
+    get accelerator() {
+        return vm.Accelerator.hvf;
+    }
     get workDirectory() {
         return '/Users/runner/work';
     }
@@ -628,6 +632,9 @@ class MacOs extends Host {
     }
 }
 class Linux extends Host {
+    get accelerator() {
+        return vm.Accelerator.tcg;
+    }
     get workDirectory() {
         return '/home/runner/work';
     }
@@ -669,6 +676,7 @@ class Linux extends Host {
         });
     }
 }
+exports.host = Host.create();
 //# sourceMappingURL=host.js.map
 
 /***/ }),
