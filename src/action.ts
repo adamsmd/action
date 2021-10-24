@@ -63,16 +63,16 @@ export class Action {
         this.setupSSHKey()
       ])
 
-    const [firmwareDirectory, resourcesDirectory] = await Promise.all([
+    const [hypervisorBaseDirectory, resourcesDirectory] = await Promise.all([
       this.unarchiveHypervisor(hypervisorArchivePath),
       this.unarchive('resources', resourcesArchivePath)
     ])
 
-    const hypervisorDirectory = path.join(firmwareDirectory, 'bin')
+    const hypervisorDirectory = path.join(hypervisorBaseDirectory, 'bin')
 
     const vmPromise = this.creareVm(
       hypervisorDirectory,
-      firmwareDirectory,
+      hypervisorBaseDirectory,
       resourcesDirectory,
       diskImagePath
     )
@@ -82,7 +82,7 @@ export class Action {
       resourcesDirectory,
       hypervisorArchivePath,
       hypervisorDirectory,
-      firmwareDirectory,
+      hypervisorBaseDirectory,
       diskImagePath
     ].map(p => p.slice(this.workDirectory.length + 1))
 

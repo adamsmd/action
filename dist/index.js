@@ -79,18 +79,18 @@ class Action {
                 this.download('resources', this.operatingSystem.resourcesUrl),
                 this.setupSSHKey()
             ]);
-            const [firmwareDirectory, resourcesDirectory] = yield Promise.all([
+            const [hypervisorBaseDirectory, resourcesDirectory] = yield Promise.all([
                 this.unarchiveHypervisor(hypervisorArchivePath),
                 this.unarchive('resources', resourcesArchivePath)
             ]);
-            const hypervisorDirectory = path.join(firmwareDirectory, 'bin');
-            const vmPromise = this.creareVm(hypervisorDirectory, firmwareDirectory, resourcesDirectory, diskImagePath);
+            const hypervisorDirectory = path.join(hypervisorBaseDirectory, 'bin');
+            const vmPromise = this.creareVm(hypervisorDirectory, hypervisorBaseDirectory, resourcesDirectory, diskImagePath);
             const excludes = [
                 resourcesArchivePath,
                 resourcesDirectory,
                 hypervisorArchivePath,
                 hypervisorDirectory,
-                firmwareDirectory,
+                hypervisorBaseDirectory,
                 diskImagePath
             ].map(p => p.slice(this.workDirectory.length + 1));
             const vm = yield vmPromise;
