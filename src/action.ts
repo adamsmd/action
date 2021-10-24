@@ -224,7 +224,7 @@ export class Action {
       ...flatMap(excludePaths, p => ['--exclude', p]),
       `${this.workDirectory}/`,
       `runner@${ipAddress}:work`
-    ])
+    ], {silent: !core.isDebug()})
   }
 
   private async syncBackFiles(ipAddress: string): Promise<void> {
@@ -234,7 +234,7 @@ export class Action {
       '-uvzrtopg',
       `runner@${ipAddress}:work/`,
       this.workDirectory
-    ])
+    ], {silent: !core.isDebug()})
   }
 
   private async runCommand(vm: vmModule.Vm): Promise<void> {
