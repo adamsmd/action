@@ -25,24 +25,13 @@ export abstract class Vm extends vm.Vm {
     this.macAddress = await this.getMacAddress()
   }
 
+  protected abstract get networkDevice(): string
+
   protected override async getIpAddress(): Promise<string> {
     return getIpAddressFromArp(this.macAddress)
   }
 
-  async getMacAddress(): Promise<string> {
-    core.debug('Getting MAC address')
-    this.macAddress = (
-      await execWithOutput('sudo', this.command.concat('-M'), {
-        silent: !core.isDebug()
-      })
-    )
-      .trim()
-      .slice(5)
-    core.debug(`Found MAC address: '${this.macAddress}'`)
-    return this.macAddress
-  }
-
-  /*override*/ get command(): string[] {
+  protected get command(): string[] {
     const config = this.configuration
 
     // prettier-ignore
@@ -62,7 +51,18 @@ export abstract class Vm extends vm.Vm {
       ]
   }
 
-  protected abstract get networkDevice(): string
+  private async getMacAddress(): Promise<string> {
+    core.debug('Getting MAC address')
+    this.macAddress = (
+      await execWithOutput('sudo', this.command.concat('-M'), {
+        silent: !core.isDebug()
+      })
+    )
+      .trim()
+      .slice(5)
+    core.debug(`Found MAC address: '${this.macAddress}'`)
+    return this.macAddress
+  }
 }
 
 export function extractIpAddress(
@@ -90,12 +90,12 @@ export class FreeBsd extends Vm {
     )
   }
 
-  protected override async shutdown(): Promise<void> {
-    await this.execute('sudo shutdown -p now')
-  }
-
   protected get networkDevice(): string {
     return 'virtio-net'
+  }
+
+  protected override async shutdown(): Promise<void> {
+    await this.execute('sudo shutdown -p now')
   }
 }
 
@@ -108,12 +108,12 @@ export class OpenBsd extends Vm {
     )
   }
 
-  protected override async shutdown(): Promise<void> {
-    await this.execute('sudo shutdown -h -p now')
-  }
-
   protected get networkDevice(): string {
     return 'e1000'
+  }
+
+  protected override async shutdown(): Promise<void> {
+    await this.execute('sudo shutdown -h -p now')
   }
 }
 
