@@ -33,8 +33,8 @@ export function toKind(value: string): Kind | undefined {
 }
 
 export abstract class OperatingSystem {
-  private readonly baseUrl = 'https://github.com/cross-platform-actions'
-  readonly resourcesUrl = `${resourceBaseUrl}v0.3.0/resources-${hostString}.tar`
+  readonly resourcesUrl: string
+  private static readonly baseUrl = 'https://github.com/cross-platform-actions'
 
   readonly architecture: architecture.Architecture
 
@@ -42,6 +42,9 @@ export abstract class OperatingSystem {
   private readonly version: string
 
   constructor(name: string, arch: architecture.Architecture, version: string) {
+    const hostString = host.toString(host.kind)
+    this.resourcesUrl = `${resourceBaseUrl}v0.2.0-rc14/resources-${hostString}.tar`
+
     this.name = name
     this.version = version
     this.architecture = arch
@@ -71,7 +74,7 @@ export abstract class OperatingSystem {
 
   get virtualMachineImageUrl(): string {
     return [
-      this.baseUrl,
+      OperatingSystem.baseUrl,
       `${this.name}-builder`,
       'releases',
       'download',
@@ -113,8 +116,6 @@ export abstract class OperatingSystem {
     return `${this.name}-${encodedVersion}-${archString}.qcow2`
   }
 }
-
-const hostString = host.toString(host.kind)
 
 abstract class Qemu extends OperatingSystem {
   get ssHostPort(): number {
