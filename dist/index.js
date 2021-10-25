@@ -854,11 +854,6 @@ class OperatingSystem {
 exports.OperatingSystem = OperatingSystem;
 OperatingSystem.resourcesUrl = `${exports.resourceBaseUrl}v0.2.0-rc14/resources-${hostString}.tar`;
 OperatingSystem.baseUrl = 'https://github.com/cross-platform-actions';
-class Qemu extends OperatingSystem {
-    get ssHostPort() {
-        return 2847;
-    }
-}
 class FreeBsd extends OperatingSystem {
     constructor(arch, version) {
         super('freebsd', arch, version);
@@ -899,9 +894,12 @@ class FreeBsd extends OperatingSystem {
         }
     }
 }
-class NetBsd extends Qemu {
+class NetBsd extends OperatingSystem {
     constructor(arch, version) {
         super('netbsd', arch, version);
+    }
+    get ssHostPort() {
+        return qemu.Vm.sshPort;
     }
     get hypervisorUrl() {
         return this.architecture.resourceUrl;
