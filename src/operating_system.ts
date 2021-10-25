@@ -117,12 +117,6 @@ export abstract class OperatingSystem {
   }
 }
 
-abstract class Qemu extends OperatingSystem {
-  get ssHostPort(): number {
-    return 2847
-  }
-}
-
 class FreeBsd extends OperatingSystem {
   constructor(arch: architecture.Architecture, version: string) {
     super('freebsd', arch, version)
@@ -181,9 +175,13 @@ class FreeBsd extends OperatingSystem {
   }
 }
 
-class NetBsd extends Qemu {
+class NetBsd extends OperatingSystem {
   constructor(arch: architecture.Architecture, version: string) {
     super('netbsd', arch, version)
+  }
+
+  get ssHostPort(): number {
+    return qemu.Vm.sshPort
   }
 
   get hypervisorUrl(): string {

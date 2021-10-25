@@ -809,8 +809,8 @@ function toKind(value) {
 exports.toKind = toKind;
 class OperatingSystem {
     constructor(name, arch, version) {
-        this.baseUrl = 'https://github.com/cross-platform-actions';
-        this.resourcesUrl = `${exports.resourceBaseUrl}v0.3.0/resources-${hostString}.tar`;
+        const hostString = host.toString(host.kind);
+        this.resourcesUrl = `${exports.resourceBaseUrl}v0.2.0-rc14/resources-${hostString}.tar`;
         this.name = name;
         this.version = version;
         this.architecture = arch;
@@ -828,7 +828,7 @@ class OperatingSystem {
     }
     get virtualMachineImageUrl() {
         return [
-            this.baseUrl,
+            OperatingSystem.baseUrl,
             `${this.name}-builder`,
             'releases',
             'download',
@@ -853,7 +853,7 @@ class OperatingSystem {
     }
 }
 exports.OperatingSystem = OperatingSystem;
-const hostString = host.toString(host.kind);
+OperatingSystem.baseUrl = 'https://github.com/cross-platform-actions';
 class Qemu extends OperatingSystem {
     get ssHostPort() {
         return 2847;
