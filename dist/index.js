@@ -76,7 +76,7 @@ class Action {
             const [diskImagePath, hypervisorArchivePath, resourcesArchivePath] = yield Promise.all([
                 this.downloadDiskImage(),
                 this.download('hypervisor', this.operatingSystem.hypervisorUrl),
-                this.download('resources', this.operatingSystem.resourcesUrl),
+                this.download('resources', os.OperatingSystem.resourcesUrl),
                 this.setupSSHKey()
             ]);
             const [hypervisorBaseDirectory, resourcesDirectory] = yield Promise.all([
@@ -796,6 +796,7 @@ var Kind;
     Kind[Kind["netBsd"] = 1] = "netBsd";
     Kind[Kind["openBsd"] = 2] = "openBsd";
 })(Kind = exports.Kind || (exports.Kind = {}));
+const hostString = host.toString(host.kind);
 const stringToKind = (() => {
     const map = new Map();
     map.set('freebsd', Kind.freeBsd);
@@ -809,8 +810,6 @@ function toKind(value) {
 exports.toKind = toKind;
 class OperatingSystem {
     constructor(name, arch, version) {
-        this.baseUrl = 'https://github.com/cross-platform-actions';
-        this.resourcesUrl = `${exports.resourceBaseUrl}v0.2.0-rc14/resources-${hostString}.tar`;
         this.name = name;
         this.version = version;
         this.architecture = arch;
@@ -828,7 +827,7 @@ class OperatingSystem {
     }
     get virtualMachineImageUrl() {
         return [
-            this.baseUrl,
+            OperatingSystem.baseUrl,
             `${this.name}-builder`,
             'releases',
             'download',
@@ -853,7 +852,8 @@ class OperatingSystem {
     }
 }
 exports.OperatingSystem = OperatingSystem;
-const hostString = host.toString(host.kind);
+OperatingSystem.baseUrl = 'https://github.com/cross-platform-actions';
+OperatingSystem.resourcesUrl = `${exports.resourceBaseUrl}v0.2.0-rc14/resources-${hostString}.tar`;
 class Qemu extends OperatingSystem {
     get ssHostPort() {
         return 2847;
