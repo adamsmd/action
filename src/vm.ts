@@ -83,8 +83,8 @@ export abstract class Vm {
       core.info('Waiting for VM to be ready...')
 
       const result = await this.execute('true', {
-        /*log: false,
-          silent: true,*/
+        log: core.isDebug(),
+        silent: !core.isDebug(),
         ignoreReturnCode: true
       })
 
