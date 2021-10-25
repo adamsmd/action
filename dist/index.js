@@ -1336,19 +1336,7 @@ class Vm extends vm.Vm {
             return getIpAddressFromArp(this.macAddress);
         });
     }
-    getMacAddress() {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.debug('Getting MAC address');
-            this.macAddress = (yield (0, utility_1.execWithOutput)('sudo', this.command.concat('-M'), {
-                silent: !core.isDebug()
-            }))
-                .trim()
-                .slice(5);
-            core.debug(`Found MAC address: '${this.macAddress}'`);
-            return this.macAddress;
-        });
-    }
-    /*override*/ get command() {
+    get command() {
         const config = this.configuration;
         // prettier-ignore
         return [
@@ -1365,6 +1353,18 @@ class Vm extends vm.Vm {
             '-s', '31,lpc',
             '-l', 'com1,stdio'
         ];
+    }
+    getMacAddress() {
+        return __awaiter(this, void 0, void 0, function* () {
+            core.debug('Getting MAC address');
+            this.macAddress = (yield (0, utility_1.execWithOutput)('sudo', this.command.concat('-M'), {
+                silent: !core.isDebug()
+            }))
+                .trim()
+                .slice(5);
+            core.debug(`Found MAC address: '${this.macAddress}'`);
+            return this.macAddress;
+        });
     }
 }
 exports.Vm = Vm;
@@ -1387,13 +1387,13 @@ class FreeBsd extends Vm {
         // prettier-ignore
         return super.command.concat('-f', `fbsd,${this.configuration.userboot},${this.configuration.diskImage},`);
     }
+    get networkDevice() {
+        return 'virtio-net';
+    }
     shutdown() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.execute('sudo shutdown -p now');
         });
-    }
-    get networkDevice() {
-        return 'virtio-net';
     }
 }
 exports.FreeBsd = FreeBsd;
@@ -1402,13 +1402,13 @@ class OpenBsd extends Vm {
         // prettier-ignore
         return super.command.concat('-l', `bootrom,${this.configuration.firmware}`, '-w');
     }
+    get networkDevice() {
+        return 'e1000';
+    }
     shutdown() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.execute('sudo shutdown -h -p now');
         });
-    }
-    get networkDevice() {
-        return 'e1000';
     }
 }
 exports.OpenBsd = OpenBsd;
