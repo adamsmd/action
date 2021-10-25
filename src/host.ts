@@ -59,12 +59,6 @@ export abstract class Host {
     requestedMountPath: string,
     block: (mountPath: Promise<string>) => void
   ): Promise<void>
-
-  /*abstract createDiskFile(size: string, diskPath: string): Promise<void>
-  abstract createDiskDevice(diskPath: string): Promise<string>
-  abstract partitionDisk(devicePath: string, mountName: string): Promise<void>
-  abstract mountDisk(devicePath: string, mountPath: string): Promise<string>
-  abstract detachDevice(devicePath: string): Promise<void>*/
 }
 
 class MacOs extends Host {
