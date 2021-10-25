@@ -1221,11 +1221,6 @@ class Vm {
             return yield exec.exec('sudo', ['kill', '-s', 'TERM', this.vmProcess.pid.toString()], { ignoreReturnCode: true });
         });
     }
-    shutdown() {
-        return __awaiter(this, void 0, void 0, function* () {
-            throw Error('Not implemented');
-        });
-    }
     execute(command, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const defaultOptions = { log: true };
@@ -1243,11 +1238,6 @@ class Vm {
     execute2(args, intput) {
         return __awaiter(this, void 0, void 0, function* () {
             return yield exec.exec('ssh', ['-t', `${Vm.user}@${this.ipAddress}`].concat(args), { input: intput });
-        });
-    }
-    getIpAddress() {
-        return __awaiter(this, void 0, void 0, function* () {
-            throw Error('Not implemented');
         });
     }
 }
