@@ -114,10 +114,6 @@ export abstract class Vm {
     )
   }
 
-  protected async shutdown(): Promise<void> {
-    throw Error('Not implemented')
-  }
-
   async execute(
     command: string,
     options: ExecuteOptions = {}
@@ -142,9 +138,7 @@ export abstract class Vm {
     )
   }
 
-  protected async getIpAddress(): Promise<string> {
-    throw Error('Not implemented')
-  }
-
   protected abstract get command(): string[]
+  protected abstract shutdown(): Promise<void>
+  protected abstract getIpAddress(): Promise<string>
 }

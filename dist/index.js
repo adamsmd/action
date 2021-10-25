@@ -1196,8 +1196,8 @@ class Vm {
             for (let index = 0; index < timeout; index++) {
                 core.info('Waiting for VM to be ready...');
                 const result = yield this.execute('true', {
-                    /*log: false,
-                      silent: true,*/
+                    log: core.isDebug(),
+                    silent: !core.isDebug(),
                     ignoreReturnCode: true
                 });
                 if (result === 0) {
