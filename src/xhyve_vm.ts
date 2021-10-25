@@ -2,10 +2,10 @@ import * as fs from 'fs'
 
 import * as core from '@actions/core'
 
-import * as vm from './vm'
+import * as os from './operating_system'
 import {execWithOutput} from './utility'
 import {wait} from './wait'
-import * as os from './operating_system'
+import * as vm from './vm'
 
 export abstract class Vm extends vm.Vm {
   static readonly sshPort = 22

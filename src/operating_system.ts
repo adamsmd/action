@@ -4,12 +4,12 @@ import * as path from 'path'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 
+import * as action from './action'
 import * as architecture from './architecture'
-import * as xhyve from './xhyve_vm'
+import * as host from './host'
 import * as qemu from './qemu_vm'
 import * as vmModule from './vm'
-import * as action from './action'
-import * as host from './host'
+import * as xhyve from './xhyve_vm'
 
 export const resourceBaseUrl =
   'https://github.com/cross-platform-actions/resources/releases/download/'

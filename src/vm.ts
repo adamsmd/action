@@ -5,8 +5,8 @@ import {ChildProcess, execFile} from 'child_process'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 
-import * as vm from './vm'
 import {ExecuteOptions} from './utility'
+import * as vm from './vm'
 import {wait} from './wait'
 
 export enum Accelerator {

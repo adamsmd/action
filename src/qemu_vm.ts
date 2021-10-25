@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+
 import * as vm from './vm'
 
 export abstract class Vm extends vm.Vm {
@@ -26,7 +27,7 @@ export abstract class Vm extends vm.Vm {
       '-cpu', this.configuration.cpu,
       '-smp', `cpus=${this.configuration.cpuCount},sockets=${this.configuration.cpuCount}`,
       '-m', this.configuration.memory,
-      
+
       '-device', 'virtio-scsi-pci',
       '-device', 'scsi-hd,drive=drive0,bootindex=0',
       '-drive', `if=none,file=${this.configuration.diskImage},id=drive0,cache=writeback,discard=ignore,format=raw`,
@@ -38,7 +39,7 @@ export abstract class Vm extends vm.Vm {
 
       '-display', 'none',
       '-monitor', 'none',
-      
+
       '-boot', 'strict=off'
     ]
   }

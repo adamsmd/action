@@ -491,13 +491,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.host = exports.Host = exports.toString = exports.kind = exports.Kind = void 0;
 const fs_1 = __webpack_require__(5747);
+const path_1 = __importDefault(__webpack_require__(5622));
 const process = __importStar(__webpack_require__(1765));
 const os = __importStar(__webpack_require__(2087));
 const core = __importStar(__webpack_require__(2186));
 const exec = __importStar(__webpack_require__(1514));
 const utility_1 = __webpack_require__(2857);
 const vm = __importStar(__webpack_require__(2772));
-const path_1 = __importDefault(__webpack_require__(5622));
 var Kind;
 (function (Kind) {
     Kind[Kind["darwin"] = 0] = "darwin";
@@ -783,12 +783,12 @@ exports.OperatingSystem = exports.toKind = exports.Kind = exports.resourceBaseUr
 const path = __importStar(__webpack_require__(5622));
 const core = __importStar(__webpack_require__(2186));
 const exec = __importStar(__webpack_require__(1514));
+const action = __importStar(__webpack_require__(9139));
 const architecture = __importStar(__webpack_require__(4019));
-const xhyve = __importStar(__webpack_require__(2722));
+const host = __importStar(__webpack_require__(8215));
 const qemu = __importStar(__webpack_require__(1106));
 const vmModule = __importStar(__webpack_require__(2772));
-const action = __importStar(__webpack_require__(9139));
-const host = __importStar(__webpack_require__(8215));
+const xhyve = __importStar(__webpack_require__(2722));
 exports.resourceBaseUrl = 'https://github.com/cross-platform-actions/resources/releases/download/';
 var Kind;
 (function (Kind) {
@@ -1314,10 +1314,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.OpenBsd = exports.FreeBsd = exports.extractIpAddress = exports.Vm = void 0;
 const core = __importStar(__webpack_require__(2186));
-const vm = __importStar(__webpack_require__(2772));
+const os = __importStar(__webpack_require__(9385));
 const utility_1 = __webpack_require__(2857);
 const wait_1 = __webpack_require__(5817);
-const os = __importStar(__webpack_require__(9385));
+const vm = __importStar(__webpack_require__(2772));
 class Vm extends vm.Vm {
     constructor(hypervisorDirectory, resourcesDirectory, configuration) {
         super(hypervisorDirectory, resourcesDirectory, 'xhyve', configuration);

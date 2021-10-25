@@ -1,4 +1,5 @@
 import {promises as fs} from 'fs'
+import path from 'path'
 import * as process from 'process'
 import * as os from 'os'
 
@@ -7,7 +8,6 @@ import * as exec from '@actions/exec'
 
 import {execWithOutput} from './utility'
 import * as vm from './vm'
-import path from 'path'
 
 export enum Kind {
   darwin,
