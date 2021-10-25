@@ -852,8 +852,8 @@ class OperatingSystem {
     }
 }
 exports.OperatingSystem = OperatingSystem;
-OperatingSystem.baseUrl = 'https://github.com/cross-platform-actions';
 OperatingSystem.resourcesUrl = `${exports.resourceBaseUrl}v0.2.0-rc14/resources-${hostString}.tar`;
+OperatingSystem.baseUrl = 'https://github.com/cross-platform-actions';
 class Qemu extends OperatingSystem {
     get ssHostPort() {
         return 2847;
