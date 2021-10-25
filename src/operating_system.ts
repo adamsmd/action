@@ -159,16 +159,16 @@ class FreeBsd extends OperatingSystem {
     core.debug('Creating FreeBSD VM')
 
     if (this.architecture.kind === architecture.Kind.x86_64) {
-      return new xhyve.OpenBsd(
+      return new xhyve.FreeBsd(
         hypervisorDirectory,
         resourcesDirectory,
         configuration
       )
     } else {
-      return new qemu.NetBsd(
-        hypervisorDirectory,
-        resourcesDirectory,
-        configuration
+      throw Error(
+        `Not implemented: FreeBSD guests are not implemented on ${architecture.toString(
+          this.architecture.kind
+        )}`
       )
     }
   }
@@ -267,10 +267,10 @@ class OpenBsd extends OperatingSystem {
         configuration
       )
     } else {
-      return new qemu.NetBsd(
-        hypervisorDirectory,
-        resourcesDirectory,
-        configuration
+      throw Error(
+        `Not implemented: OpenBSD guests are not implemented on ${architecture.toString(
+          this.architecture.kind
+        )}`
       )
     }
   }

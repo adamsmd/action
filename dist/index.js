@@ -887,10 +887,10 @@ class FreeBsd extends OperatingSystem {
     createVirtualMachine(hypervisorDirectory, resourcesDirectory, configuration) {
         core.debug('Creating FreeBSD VM');
         if (this.architecture.kind === architecture.Kind.x86_64) {
-            return new xhyve.OpenBsd(hypervisorDirectory, resourcesDirectory, configuration);
+            return new xhyve.FreeBsd(hypervisorDirectory, resourcesDirectory, configuration);
         }
         else {
-            return new qemu.NetBsd(hypervisorDirectory, resourcesDirectory, configuration);
+            throw Error(`Not implemented: FreeBSD guests are not implemented on ${architecture.toString(this.architecture.kind)}`);
         }
     }
 }
@@ -956,7 +956,7 @@ class OpenBsd extends OperatingSystem {
             return new xhyve.OpenBsd(hypervisorDirectory, resourcesDirectory, configuration);
         }
         else {
-            return new qemu.NetBsd(hypervisorDirectory, resourcesDirectory, configuration);
+            throw Error(`Not implemented: OpenBSD guests are not implemented on ${architecture.toString(this.architecture.kind)}`);
         }
     }
 }
