@@ -34,7 +34,7 @@ const architectures: ReadonlyMap<Kind, Architecture> = (() => {
     cpu: 'cortex-a57',
     machineType: 'virt',
     accelerator: vm.Accelerator.tcg,
-    resourceUrl: `${resourceBaseUrl}v0.2.0-rc14/qemu-system-aarch64-${hostString}.tar`
+    resourceUrl: `${resourceBaseUrl}v0.3.0/qemu-system-aarch64-${hostString}.tar`
   })
 
   map.set(Kind.x86_64, {
@@ -42,7 +42,7 @@ const architectures: ReadonlyMap<Kind, Architecture> = (() => {
     cpu: host.kind === host.Kind.darwin ? 'host' : 'qemu64',
     machineType: 'pc',
     accelerator: host.host.accelerator,
-    resourceUrl: `${resourceBaseUrl}v0.2.0-rc14/qemu-system-x86_64-${hostString}.tar`
+    resourceUrl: `${resourceBaseUrl}v0.3.0/qemu-system-x86_64-${hostString}.tar`
   })
 
   return map

@@ -35,7 +35,7 @@ export function toKind(value: string): Kind | undefined {
 }
 
 export abstract class OperatingSystem {
-  static readonly resourcesUrl = `${resourceBaseUrl}v0.2.0-rc14/resources-${hostString}.tar`
+  static readonly resourcesUrl = `${resourceBaseUrl}v0.3.0/resources-${hostString}.tar`
   private static readonly baseUrl = 'https://github.com/cross-platform-actions'
 
   readonly architecture: architecture.Architecture

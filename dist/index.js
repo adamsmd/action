@@ -419,14 +419,14 @@ const architectures = (() => {
         cpu: 'cortex-a57',
         machineType: 'virt',
         accelerator: vm.Accelerator.tcg,
-        resourceUrl: `${operating_system_1.resourceBaseUrl}v0.2.0-rc14/qemu-system-aarch64-${hostString}.tar`
+        resourceUrl: `${operating_system_1.resourceBaseUrl}v0.3.0/qemu-system-aarch64-${hostString}.tar`
     });
     map.set(Kind.x86_64, {
         kind: Kind.x86_64,
         cpu: host.kind === host.Kind.darwin ? 'host' : 'qemu64',
         machineType: 'pc',
         accelerator: host.host.accelerator,
-        resourceUrl: `${operating_system_1.resourceBaseUrl}v0.2.0-rc14/qemu-system-x86_64-${hostString}.tar`
+        resourceUrl: `${operating_system_1.resourceBaseUrl}v0.3.0/qemu-system-x86_64-${hostString}.tar`
     });
     return map;
 })();
@@ -852,7 +852,7 @@ class OperatingSystem {
     }
 }
 exports.OperatingSystem = OperatingSystem;
-OperatingSystem.resourcesUrl = `${exports.resourceBaseUrl}v0.2.0-rc14/resources-${hostString}.tar`;
+OperatingSystem.resourcesUrl = `${exports.resourceBaseUrl}v0.3.0/resources-${hostString}.tar`;
 OperatingSystem.baseUrl = 'https://github.com/cross-platform-actions';
 class FreeBsd extends OperatingSystem {
     constructor(arch, version) {
@@ -1369,7 +1369,7 @@ class Vm extends vm.Vm {
 }
 exports.Vm = Vm;
 Vm.sshPort = 22;
-Vm.hypervisorUrl = `${os.resourceBaseUrl}v0.2.0-rc14/xhyve-macos.tar`;
+Vm.hypervisorUrl = `${os.resourceBaseUrl}v0.3.0/xhyve-macos.tar`;
 function extractIpAddress(arpOutput, macAddress) {
     var _a;
     core.debug('Extracing IP address');

@@ -9,7 +9,7 @@ import * as vm from './vm'
 
 export abstract class Vm extends vm.Vm {
   static readonly sshPort = 22
-  static readonly hypervisorUrl = `${os.resourceBaseUrl}v0.2.0-rc14/xhyve-macos.tar`
+  static readonly hypervisorUrl = `${os.resourceBaseUrl}v0.3.0/xhyve-macos.tar`
   macAddress!: string
 
   constructor(
