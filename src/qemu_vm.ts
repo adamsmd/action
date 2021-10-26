@@ -45,7 +45,19 @@ export abstract class Vm extends vm.Vm {
   }
 }
 
+export class FreeBsd extends Vm {
+  protected override async shutdown(): Promise<void> {
+    await this.execute('sudo shutdown -p now')
+  }
+}
+
 export class NetBsd extends Vm {
+  protected override async shutdown(): Promise<void> {
+    await this.execute('sudo shutdown -h -p now')
+  }
+}
+
+export class OpenBsd extends Vm {
   protected override async shutdown(): Promise<void> {
     await this.execute('sudo shutdown -h -p now')
   }

@@ -6,8 +6,10 @@ import * as os from 'os'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 
+import * as qemu from './qemu_vm'
 import {execWithOutput} from './utility'
 import * as vm from './vm'
+import * as xhyve from './xhyve_vm'
 
 export enum Kind {
   darwin,
@@ -52,6 +54,7 @@ export abstract class Host {
 
   abstract get accelerator(): vm.Accelerator
   abstract get workDirectory(): string
+  abstract get vmModule(): typeof xhyve | typeof qemu
 
   abstract createDisk(
     size: string,
@@ -68,6 +71,10 @@ class MacOs extends Host {
 
   get workDirectory(): string {
     return '/Users/runner/work'
+  }
+
+  get vmModule(): typeof xhyve | typeof qemu {
+    return xhyve
   }
 
   async createDisk(
@@ -152,6 +159,10 @@ class Linux extends Host {
 
   get workDirectory(): string {
     return '/home/runner/work'
+  }
+
+  get vmModule(): typeof xhyve | typeof qemu {
+    return qemu
   }
 
   async createDisk(

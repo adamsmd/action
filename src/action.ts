@@ -59,7 +59,7 @@ export class Action {
       await Promise.all([
         this.downloadDiskImage(),
         this.download('hypervisor', this.operatingSystem.hypervisorUrl),
-        this.download('resources', os.OperatingSystem.resourcesUrl),
+        this.download('resources', this.operatingSystem.resourcesUrl),
         this.setupSSHKey()
       ])
 

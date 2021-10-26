@@ -20,8 +20,6 @@ export enum Kind {
   openBsd
 }
 
-const hostString = host.toString(host.kind)
-
 const stringToKind: ReadonlyMap<string, Kind> = (() => {
   const map = new Map<string, Kind>()
   map.set('freebsd', Kind.freeBsd)
@@ -35,7 +33,7 @@ export function toKind(value: string): Kind | undefined {
 }
 
 export abstract class OperatingSystem {
-  static readonly resourcesUrl = `${resourceBaseUrl}v0.3.0/resources-${hostString}.tar`
+  readonly resourcesUrl: string
   private static readonly baseUrl = 'https://github.com/cross-platform-actions'
 
   readonly architecture: architecture.Architecture
@@ -44,6 +42,8 @@ export abstract class OperatingSystem {
   private readonly version: string
 
   constructor(name: string, arch: architecture.Architecture, version: string) {
+    const hostString = host.toString(host.kind)
+    this.resourcesUrl = `${resourceBaseUrl}v0.3.0/resources-${hostString}.tar`
     this.name = name
     this.version = version
     this.architecture = arch
@@ -159,7 +159,7 @@ class FreeBsd extends OperatingSystem {
     core.debug('Creating FreeBSD VM')
 
     if (this.architecture.kind === architecture.Kind.x86_64) {
-      return new xhyve.FreeBsd(
+      return new host.host.vmModule.FreeBsd(
         hypervisorDirectory,
         resourcesDirectory,
         configuration
@@ -261,7 +261,7 @@ class OpenBsd extends OperatingSystem {
     core.debug('Creating OpenBSD VM')
 
     if (this.architecture.kind === architecture.Kind.x86_64) {
-      return new xhyve.OpenBsd(
+      return new host.host.vmModule.OpenBsd(
         hypervisorDirectory,
         resourcesDirectory,
         configuration

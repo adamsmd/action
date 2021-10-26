@@ -76,7 +76,7 @@ class Action {
             const [diskImagePath, hypervisorArchivePath, resourcesArchivePath] = yield Promise.all([
                 this.downloadDiskImage(),
                 this.download('hypervisor', this.operatingSystem.hypervisorUrl),
-                this.download('resources', os.OperatingSystem.resourcesUrl),
+                this.download('resources', this.operatingSystem.resourcesUrl),
                 this.setupSSHKey()
             ]);
             const [hypervisorBaseDirectory, resourcesDirectory] = yield Promise.all([
@@ -496,8 +496,10 @@ const process = __importStar(__webpack_require__(1765));
 const os = __importStar(__webpack_require__(2087));
 const core = __importStar(__webpack_require__(2186));
 const exec = __importStar(__webpack_require__(1514));
+const qemu = __importStar(__webpack_require__(1106));
 const utility_1 = __webpack_require__(2857);
 const vm = __importStar(__webpack_require__(2772));
+const xhyve = __importStar(__webpack_require__(2722));
 var Kind;
 (function (Kind) {
     Kind[Kind["darwin"] = 0] = "darwin";
@@ -544,6 +546,9 @@ class MacOs extends Host {
     }
     get workDirectory() {
         return '/Users/runner/work';
+    }
+    get vmModule() {
+        return xhyve;
     }
     createDisk(size, diskPath, requestedMountPath, block) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -621,6 +626,9 @@ class Linux extends Host {
     }
     get workDirectory() {
         return '/home/runner/work';
+    }
+    get vmModule() {
+        return qemu;
     }
     createDisk(size, diskPath, requestedMountPath, block) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -796,7 +804,6 @@ var Kind;
     Kind[Kind["netBsd"] = 1] = "netBsd";
     Kind[Kind["openBsd"] = 2] = "openBsd";
 })(Kind = exports.Kind || (exports.Kind = {}));
-const hostString = host.toString(host.kind);
 const stringToKind = (() => {
     const map = new Map();
     map.set('freebsd', Kind.freeBsd);
@@ -810,6 +817,8 @@ function toKind(value) {
 exports.toKind = toKind;
 class OperatingSystem {
     constructor(name, arch, version) {
+        const hostString = host.toString(host.kind);
+        this.resourcesUrl = `${exports.resourceBaseUrl}v0.3.0/resources-${hostString}.tar`;
         this.name = name;
         this.version = version;
         this.architecture = arch;
@@ -852,7 +861,6 @@ class OperatingSystem {
     }
 }
 exports.OperatingSystem = OperatingSystem;
-OperatingSystem.resourcesUrl = `${exports.resourceBaseUrl}v0.3.0/resources-${hostString}.tar`;
 OperatingSystem.baseUrl = 'https://github.com/cross-platform-actions';
 class FreeBsd extends OperatingSystem {
     constructor(arch, version) {
@@ -887,7 +895,7 @@ class FreeBsd extends OperatingSystem {
     createVirtualMachine(hypervisorDirectory, resourcesDirectory, configuration) {
         core.debug('Creating FreeBSD VM');
         if (this.architecture.kind === architecture.Kind.x86_64) {
-            return new xhyve.FreeBsd(hypervisorDirectory, resourcesDirectory, configuration);
+            return new host.host.vmModule.FreeBsd(hypervisorDirectory, resourcesDirectory, configuration);
         }
         else {
             throw Error(`Not implemented: FreeBSD guests are not implemented on ${architecture.toString(this.architecture.kind)}`);
@@ -953,7 +961,7 @@ class OpenBsd extends OperatingSystem {
     createVirtualMachine(hypervisorDirectory, resourcesDirectory, configuration) {
         core.debug('Creating OpenBSD VM');
         if (this.architecture.kind === architecture.Kind.x86_64) {
-            return new xhyve.OpenBsd(hypervisorDirectory, resourcesDirectory, configuration);
+            return new host.host.vmModule.OpenBsd(hypervisorDirectory, resourcesDirectory, configuration);
         }
         else {
             throw Error(`Not implemented: OpenBSD guests are not implemented on ${architecture.toString(this.architecture.kind)}`);
@@ -1013,7 +1021,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.NetBsd = exports.Vm = void 0;
+exports.OpenBsd = exports.NetBsd = exports.FreeBsd = exports.Vm = void 0;
 const vm = __importStar(__webpack_require__(2772));
 class Vm extends vm.Vm {
     constructor(hypervisorDirectory, resourcesDirectory, configuration) {
@@ -1048,6 +1056,14 @@ class Vm extends vm.Vm {
 }
 exports.Vm = Vm;
 Vm.sshPort = 2847;
+class FreeBsd extends Vm {
+    shutdown() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.execute('sudo shutdown -p now');
+        });
+    }
+}
+exports.FreeBsd = FreeBsd;
 class NetBsd extends Vm {
     shutdown() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -1056,6 +1072,14 @@ class NetBsd extends Vm {
     }
 }
 exports.NetBsd = NetBsd;
+class OpenBsd extends Vm {
+    shutdown() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.execute('sudo shutdown -h -p now');
+        });
+    }
+}
+exports.OpenBsd = OpenBsd;
 //# sourceMappingURL=qemu_vm.js.map
 
 /***/ }),
