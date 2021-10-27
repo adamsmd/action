@@ -496,6 +496,7 @@ const process = __importStar(__webpack_require__(1765));
 const os = __importStar(__webpack_require__(2087));
 const core = __importStar(__webpack_require__(2186));
 const exec = __importStar(__webpack_require__(1514));
+const architecture = __importStar(__webpack_require__(4019));
 const qemu = __importStar(__webpack_require__(1106));
 const utility_1 = __webpack_require__(2857);
 const vm = __importStar(__webpack_require__(2772));
@@ -549,6 +550,9 @@ class MacOs extends Host {
     }
     get vmModule() {
         return xhyve;
+    }
+    canRunXhyve(arch) {
+        return arch.kind === architecture.Kind.x86_64;
     }
     createDisk(size, diskPath, requestedMountPath, block) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -629,6 +633,11 @@ class Linux extends Host {
     }
     get vmModule() {
         return qemu;
+    }
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    canRunXhyve(_arch) {
+        /* eslint-enable @typescript-eslint/no-unused-vars */
+        return false;
     }
     createDisk(size, diskPath, requestedMountPath, block) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -867,7 +876,7 @@ class FreeBsd extends OperatingSystem {
         super('freebsd', arch, version);
     }
     get hypervisorUrl() {
-        if (this.architecture.kind === architecture.Kind.x86_64)
+        if (host.host.canRunXhyve(this.architecture))
             return xhyve.Vm.hypervisorUrl;
         else
             return this.architecture.resourceUrl;
@@ -933,7 +942,7 @@ class OpenBsd extends OperatingSystem {
         super('openbsd', arch, version);
     }
     get hypervisorUrl() {
-        if (this.architecture.kind === architecture.Kind.x86_64)
+        if (host.host.canRunXhyve(this.architecture))
             return xhyve.Vm.hypervisorUrl;
         else
             return this.architecture.resourceUrl;

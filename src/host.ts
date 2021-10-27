@@ -6,6 +6,7 @@ import * as os from 'os'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 
+import * as architecture from './architecture'
 import * as qemu from './qemu_vm'
 import {execWithOutput} from './utility'
 import * as vm from './vm'
@@ -55,6 +56,7 @@ export abstract class Host {
   abstract get accelerator(): vm.Accelerator
   abstract get workDirectory(): string
   abstract get vmModule(): typeof xhyve | typeof qemu
+  abstract canRunXhyve(arch: architecture.Architecture): boolean
 
   abstract createDisk(
     size: string,
@@ -75,6 +77,10 @@ class MacOs extends Host {
 
   get vmModule(): typeof xhyve | typeof qemu {
     return xhyve
+  }
+
+  canRunXhyve(arch: architecture.Architecture): boolean {
+    return arch.kind === architecture.Kind.x86_64
   }
 
   async createDisk(
@@ -163,6 +169,12 @@ class Linux extends Host {
 
   get vmModule(): typeof xhyve | typeof qemu {
     return qemu
+  }
+
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  canRunXhyve(_arch: architecture.Architecture): boolean {
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    return false
   }
 
   async createDisk(

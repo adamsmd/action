@@ -122,8 +122,7 @@ class FreeBsd extends OperatingSystem {
   }
 
   get hypervisorUrl(): string {
-    if (this.architecture.kind === architecture.Kind.x86_64)
-      return xhyve.Vm.hypervisorUrl
+    if (host.host.canRunXhyve(this.architecture)) return xhyve.Vm.hypervisorUrl
     else return this.architecture.resourceUrl
   }
 
@@ -224,8 +223,7 @@ class OpenBsd extends OperatingSystem {
   }
 
   get hypervisorUrl(): string {
-    if (this.architecture.kind === architecture.Kind.x86_64)
-      return xhyve.Vm.hypervisorUrl
+    if (host.host.canRunXhyve(this.architecture)) return xhyve.Vm.hypervisorUrl
     else return this.architecture.resourceUrl
   }
 
