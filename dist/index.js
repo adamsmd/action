@@ -882,7 +882,7 @@ class FreeBsd extends OperatingSystem {
             return this.architecture.resourceUrl;
     }
     get ssHostPort() {
-        if (this.architecture.kind === architecture.Kind.x86_64)
+        if (host.host.canRunXhyve(this.architecture))
             return xhyve.Vm.sshPort;
         else
             return qemu.Vm.sshPort;
@@ -948,7 +948,7 @@ class OpenBsd extends OperatingSystem {
             return this.architecture.resourceUrl;
     }
     get ssHostPort() {
-        if (this.architecture.kind === architecture.Kind.x86_64)
+        if (host.host.canRunXhyve(this.architecture))
             return xhyve.Vm.sshPort;
         else
             return qemu.Vm.sshPort;
