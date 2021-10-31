@@ -826,6 +826,7 @@ function toKind(value) {
 exports.toKind = toKind;
 class OperatingSystem {
     constructor(name, arch, version) {
+        this.xhyveHypervisorUrl = `${exports.resourceBaseUrl}v0.3.0/xhyve-macos.tar`;
         const hostString = host.toString(host.kind);
         this.resourcesUrl = `${exports.resourceBaseUrl}v0.3.0/resources-${hostString}.tar`;
         this.name = name;
@@ -877,7 +878,7 @@ class FreeBsd extends OperatingSystem {
     }
     get hypervisorUrl() {
         if (host.host.canRunXhyve(this.architecture))
-            return xhyve.Vm.hypervisorUrl;
+            return this.xhyveHypervisorUrl;
         else
             return this.architecture.resourceUrl;
     }
@@ -943,7 +944,7 @@ class OpenBsd extends OperatingSystem {
     }
     get hypervisorUrl() {
         if (host.host.canRunXhyve(this.architecture))
-            return xhyve.Vm.hypervisorUrl;
+            return this.xhyveHypervisorUrl;
         else
             return this.architecture.resourceUrl;
     }
@@ -1347,7 +1348,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.OpenBsd = exports.FreeBsd = exports.extractIpAddress = exports.Vm = void 0;
 const core = __importStar(__webpack_require__(2186));
-const os = __importStar(__webpack_require__(9385));
 const utility_1 = __webpack_require__(2857);
 const wait_1 = __webpack_require__(5817);
 const vm = __importStar(__webpack_require__(2772));
@@ -1402,7 +1402,6 @@ class Vm extends vm.Vm {
 }
 exports.Vm = Vm;
 Vm.sshPort = 22;
-Vm.hypervisorUrl = `${os.resourceBaseUrl}v0.3.0/xhyve-macos.tar`;
 function extractIpAddress(arpOutput, macAddress) {
     var _a;
     core.debug('Extracing IP address');

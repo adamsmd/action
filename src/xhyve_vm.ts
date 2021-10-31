@@ -2,14 +2,12 @@ import * as fs from 'fs'
 
 import * as core from '@actions/core'
 
-import * as os from './operating_system'
 import {execWithOutput} from './utility'
 import {wait} from './wait'
 import * as vm from './vm'
 
 export abstract class Vm extends vm.Vm {
   static readonly sshPort = 22
-  static readonly hypervisorUrl = `${os.resourceBaseUrl}v0.3.0/xhyve-macos.tar`
   macAddress!: string
 
   constructor(

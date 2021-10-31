@@ -38,6 +38,8 @@ export abstract class OperatingSystem {
 
   readonly architecture: architecture.Architecture
 
+  protected readonly xhyveHypervisorUrl = `${resourceBaseUrl}v0.3.0/xhyve-macos.tar`
+
   private readonly name: string
   private readonly version: string
 
@@ -122,7 +124,7 @@ class FreeBsd extends OperatingSystem {
   }
 
   get hypervisorUrl(): string {
-    if (host.host.canRunXhyve(this.architecture)) return xhyve.Vm.hypervisorUrl
+    if (host.host.canRunXhyve(this.architecture)) return this.xhyveHypervisorUrl
     else return this.architecture.resourceUrl
   }
 
@@ -222,7 +224,7 @@ class OpenBsd extends OperatingSystem {
   }
 
   get hypervisorUrl(): string {
-    if (host.host.canRunXhyve(this.architecture)) return xhyve.Vm.hypervisorUrl
+    if (host.host.canRunXhyve(this.architecture)) return this.xhyveHypervisorUrl
     else return this.architecture.resourceUrl
   }
 
